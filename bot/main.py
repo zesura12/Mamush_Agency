@@ -220,8 +220,10 @@ async def ዋና_ምናሌ_ንካ(callback: types.CallbackQuery, state: FSMConte
     await callback.answer()
     key   = callback.data[len("serv_"):]
     label = MAIN_SERVICES.get(key, "አገልግሎት")
+    await state.update_data(main_key=key, main_label=label)
+    header = f"<b>📋 ምርጫዎ:</b>\n  • {label}\n\n"
     await callback.message.edit_text(
-        f"<b>{label}</b>\n\nእባክዎ ዝርዝር አገልግሎት ይምረጡ፦",
+        f"{header}እባክዎ ዝርዝር አገልግሎት ይምረጡ፦",
         reply_markup=ንዑስ_ምናሌ(key),
         parse_mode="HTML",
     )
@@ -234,11 +236,15 @@ async def ንዑስ_ምናሌ_ንካ(callback: types.CallbackQuery, state: FSMCo
     sub_key = callback.data[len("sub_"):]
     label, description = SUB_SERVICES.get(sub_key, ("—", "—"))
     main_key = sub_key.rsplit("_", 1)[0]
+    data = await state.get_data()
+    main_label = data.get("main_label", MAIN_SERVICES.get(main_key, ""))
+    await state.update_data(sub_label=label)
+    header = f"<b>📋 ምርጫዎ:</b>\n  • {main_label}\n  • {label}\n\n"
     kb = InlineKeyboardMarkup(inline_keyboard=[
         [InlineKeyboardButton(text="✅ ትእዛዝ አስተላልፍ", callback_data=f"order_{sub_key}")],
         [InlineKeyboardButton(text="🔙 ወደ ኋላ ተመለስ",  callback_data=f"serv_{main_key}")],
     ])
-    await callback.message.edit_text(description, reply_markup=kb, parse_mode="HTML")
+    await callback.message.edit_text(header + description, reply_markup=kb, parse_mode="HTML")
 
 
 # ─── ትእዛዝ: ሁሉም አገልግሎቶች ፍላጎት ይፃፉ ────────────────────────────────────────────
@@ -249,15 +255,21 @@ async def ትእዛዝ_ጀምር(callback: types.CallbackQuery, state: FSMContex
     await state.update_data(selected_service=sub_key)
     await state.set_state(OrderState.waiting_for_item_description)
 
+    data = await state.get_data()
+    main_label = data.get("main_label", "")
+    sub_label  = data.get("sub_label", SUB_SERVICES.get(sub_key, ("",))[0])
+    header = f"<b>📋 ምርጫዎ:</b>\n  • {main_label}\n  • {sub_label}\n\n"
+
     if sub_key.startswith("sourcing_"):
         prompt = (
+            f"{header}"
             "📝 <b>ምን እቃ እንዲያመጣሉ ይፈልጋሉ?</b>\n\n"
             "የሚፈልጉትን እቃ ዝርዝር (ስም፣ ቁጥር፣ ቀለም ወዘተ) ይፃፉ ⬇️"
         )
     else:
-        label = SUB_SERVICES.get(sub_key, ("አገልግሎት",))[0]
         prompt = (
-            f"📝 <b>ስለ {label} ፍላጎትዎ ይፃፉ</b>\n\n"
+            f"{header}"
+            f"📝 <b>ስለ {sub_label} ፍላጎትዎ ይፃፉ</b>\n\n"
             "ዝርዝሩን (ቦታ፣ ስፋት፣ ልዩ ፍላጎት ወዘተ) ሲፅፉ ምላሽ ፈጣን ይሆናል ⬇️"
         )
     await callback.message.answer(prompt, parse_mode="HTML")
@@ -270,13 +282,25 @@ async def የእቃ_ዝርዝር_ተቀበል(message: types.Message, state: FSM
     await state.update_data(item_description=item_text)
     await state.set_state(OrderState.waiting_for_contact)
 
+    data = await state.get_data()
+    main_label = data.get("main_label", "")
+    sub_key    = data.get("selected_service", "")
+    sub_label  = data.get("sub_label", SUB_SERVICES.get(sub_key, ("",))[0])
+    short_desc = item_text[:80] + ("…" if len(item_text) > 80 else "")
+    header = (
+        f"<b>📋 ምርጫዎ:</b>\n"
+        f"  • {main_label}\n"
+        f"  • {sub_label}\n"
+        f"  • 📝 {short_desc}\n\n"
+    )
+
     kb = ReplyKeyboardMarkup(
         keyboard=[[KeyboardButton(text="📱 ስልክ ቁጥሬን ላክ", request_contact=True)]],
         resize_keyboard=True,
         one_time_keyboard=True,
     )
     await message.answer(
-        "✅ ምርጫዎ ተመዝግቧል!\n\n"
+        f"{header}"
         "አሁን ደግሞ <b>'ስልክ ቁጥሬን ላክ'</b> ይጫኑ — ቶሎ እንደውልዎታለን።",
         reply_markup=kb,
         parse_mode="HTML",
