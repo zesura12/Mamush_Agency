@@ -1,0 +1,54 @@
+Skip to content
+New
+Background tasks allow you to get more work done at once.
+Try creating your first one!
+View documentation
+እሺ ሊላ ይቀረዋል ብለህ የምታስበው ነገር ካለ በሙሉ አስተካልክለው
+5 days ago
+Improving FSM storage
+ሶስት ነገር ይቀራሉ። ሁሉንም አንድ ጊዜ አስተካክላለሁ፦
+Keep-alive interval — 5 ደቂቃ ሳይሆን 60 ሰከንድ (autoscale ካለ ይበቃል)
+Fallback handler — ያልተጠበቀ message ሲላክ ቦቱ ዝም አይልም
+Stuck state fix — ደንበኛ /start ቢጽፍ ቀዳሚ state ይጠፋ
+ቦቱ እየሰራ ነው ✅ — አሁን Republish ያድርጉ፣ ሁሉም ለውጦች production ላይ ይሰሩ ዘንድ።
+አሁን ደሞ እቃዎችን በ ትእዛዝ እናመጣለን የሚለው ምርጫ ላይ ደንበኞች የፈለጉትን በ እራሳቸው መፃፍ የሚችሉበትን እንዲሁም ትእዛዙ ወደ እኔ ሲልክ እነሱ የፃፉትን እቃ አብሮ እንዲልክልኝ አድርግልኝ እና ደሞ ለብቻው ደንበኞች ትእዛዝ ካዘዙ በኋላ ወይ ከተሰራላቸው በኋላ አስተያየት የሚሰጡበትን ለብቻው ስራለት
+5 days ago
+ሁለቱን features አበጃለሁ — sourcing item description + feedback system።
+ሁሉም ሰርቷል ✅ — deployment logs ውስጥ keep-alive በየ 1 ደቂቃ status=200 ይመልሳል። ሁለቱ features ዝግጁ ናቸው፦
+1. 📦 Sourcing — እቃ ዝርዝር
+ደንበኛ "እቃዎችን በትእዛዝ ማምጣት" ሲመርጥ → "ምን እቃ ይፈልጋሉ? ዝርዝሩን ይፃፉ ⬇️" ይጠይቃል
+ደንበኛ ዝርዝሩን ፅፎ → ስልክ ቁጥሩን ይልካል
+Admin ዘንድ እቃ ዝርዝሩ + ስልክ + ስም አብሮ ይደርሳል፦
+🚨 አዲስ ትእዛዝ!
+🛎 አገልግሎት: 🛋 የቤት ውስጥ እቃዎች
+📦 የሚፈልጉት እቃ:
+2 ሶፋ፣ 1 ጠረጴዛ፣ ቀይ ቀለም
+👤 ስም: ...
+📞 ስልክ: ...
+2. 🌟 Feedback System
+ትእዛዝ ከሰጡ በኋላ "🌟 አስተያየት ስጥ" ቁልፍ ይታያል
+/feedback ትእዛዝ በማናቸውም ጊዜ ይሰራል
+1–5 ⭐️ ደረጃ → ሃሳብ ይፃፉ (ወይም ዝለሉ) → Admin ዘንድ ይደርሳል
+Republish ያድርጉ production ላይ ይሰራ ዘንድ፦
+አሁን ጥሩ ነው ግን የመረጡትን አገልግሎት የሚፅፉበት ቦታ የላቸውም እሱን አስተካክል
+5 days ago
+Describing service needs
+ሁሉም አገልግሎቶች ላይ — sourcing ብቻ ሳይሆን — ደንበኛ ፍላጎቱን የሚፅፍበት ቦታ ጨምራለሁ።
+ተስተካክሏል ✅ — አሁን ሁሉም አገልግሎቶች ትእዛዝ ሲያስተላልፉ ደንበኛ መጀመሪያ ፍላጎቱን ይፅፋል፦
+Sourcing → "ምን እቃ እንዲያመጣሉ ይፈልጋሉ? ዝርዝሩን ይፃፉ"
+ሌሎች (ጥገና፣ ፅዳት፣ ማዘዋወር ወዘተ) → "ስለ [አገልግሎቱ] ፍላጎትዎ ይፃፉ — ቦታ፣ ስፋት፣ ልዩ ፍላጎት"
+ከዚያ ስልክ ቁጥር → ሁሉም ዝርዝር ወደ Admin ይደርሳል። Republish ያድርጉ፦
+በተጨማሪም ደንበኞች አንድ ስራ ከሰራንላቸው በኋላ ያንን ስራ እንደተሰራላቸው የሚያረጋግጥ ለኛ የሚልኩት የ right ካልተሰራላቸው የ x ምልክትን የሚልኩበት ምርጫ አዘጋጅላቸው
+5 days ago
+Confirming job completion
+ሶስት ነገር ጨምራለሁ:
+Admin notification ላይ "📬 ስራ ሲያልቅ ደንበኛ አሳውቅ" ቁልፍ
+Admin ሲጫን ደንበኛ ዘንድ [✅ አዎ ተሰርቷል | ❌ አልተሰራም] ይደርሰዋል
+ደንበኛ ሲመልስ admin ዘንድ ያሳውቀዋል
+You've reached your monthly free quota limit. It will reset on August 14, 2026.
+የ bot profile ለላ picture አድርግልኝ
+5 days ago
+You've reached your monthly free quota limit. It will reset on August 14, 2026.
+You're out of credits.
+የዚህን project URL ላክልኝ
+Loading... - Replit
