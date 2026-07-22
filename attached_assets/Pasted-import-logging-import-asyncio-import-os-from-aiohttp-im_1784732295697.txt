@@ -1,0 +1,127 @@
+import logging
+import asyncio
+import os
+from aiohttp import web
+from aiogram import Bot, Dispatcher, types, F
+from aiogram.filters import Command
+from aiogram.fsm.context import FSMContext
+from aiogram.fsm.state import State, StatesGroup
+from aiogram.fsm.storage.memory import MemoryStorage
+from aiogram.types import (
+    ReplyKeyboardMarkup,
+    KeyboardButton,
+    InlineKeyboardMarkup,
+    InlineKeyboardButton,
+)
+from aiogram.webhook.aiohttp_server import SimpleRequestHandler, setup_application
+
+logging.basicConfig(level=logging.INFO)
+
+# --- ውቅር ---
+API_TOKEN    = os.environ.get("TELEGRAM_BOT_TOKEN")
+ADMIN_ID     = int(os.environ.get("ADMIN_ID", "0"))
+WEBHOOK_URL  = os.environ.get("WEBHOOK_URL", "")
+WEBHOOK_PATH = "/bot/webhook"
+PORT         = int(os.environ.get("PORT", 8000))
+
+if not API_TOKEN:
+    raise RuntimeError("❌ TELEGRAM_BOT_TOKEN አልተቀናጀም።")
+if not ADMIN_ID:
+    raise RuntimeError("❌ ADMIN_ID አልተቀናጀም።")
+
+bot = Bot(token=API_TOKEN)
+dp  = Dispatcher(storage=MemoryStorage())
+
+
+# --- FSM States ---
+class OrderState(StatesGroup):
+    waiting_for_item_description = State()  # sourcing አገልግሎት ብቻ
+    waiting_for_contact          = State()
+
+class FeedbackState(StatesGroup):
+    waiting_for_rating  = State()
+    waiting_for_comment = State()
+
+
+# ─── ዋና አገልግሎቶች ───────────────────────────────────────────────────────────────
+MAIN_SERVICES = {
+    "maintenance": "🛠 የመብራት እና ቧንቧ ጥገና",
+    "workers":     "👷‍♂️ ግንባታ፣ ቀለም እና ጂብሰም",
+    "cleaning":    "🧹 የቤት እና ቢሮ ፅዳት",
+    "moving":      "🚚 እቃዎችን ማዘዋወር",
+    "sourcing":    "📦 እቃዎችን በትእዛዝ ማምጣት",
+}
+
+# ─── ንዑስ አገልግሎቶች ───────────────────────────────────────────────────────────────
+SUB_SERVICES = {
+    # ── 1. ጥገና ──
+    "maintenance_electric": (
+        "⚡️ የመብራት ጥገና",
+        "⚡️ <b>የመብራት ጥገና</b>\n\n"
+        "የቤትዎ ወይም ቢሮዎ የኤሌክትሪክ ብልሽቶችን፣ ቋቋም ያጡ ሶኬቶችን፣ "
+        "ሽቦ ዝርጋታ እና ሌሎች ችግሮችን በሰለጠኑ ባለሞያዎች ፈጥነን እናስተካክላለን።"
+    ),
+    "maintenance_plumbing": (
+        "🔧 የቧንቧ እና ፍሳሽ ጥገና",
+        "🔧 <b>የቧንቧ እና ፍሳሽ ጥገና</b>\n\n"
+        "የቧንቧ ብልሽት፣ ፍሳሽ መብዛት፣ ቁሳቁስ መሰካት እና ሌሎች "
+        "ችግሮችን በሰለጠኑ ባለሞያዎች ፈጥነን እናስተካክላለን።"
+    ),
+
+    # ── 2. ሰራተኞች ──
+    "workers_mason": (
+        "🧱 ግንበኛ",
+        "🧱 <b>ግንበኛ</b>\n\n"
+        "ለማናቸውም የግንባታ ስራዎች — ቤት ማቆም፣ ግድግዳ ማስፋት፣ "
+        "ድልድይ — ብቁ ግንበኞችን ቶሎ እናቀርባለን።"
+    ),
+    "workers_painter": (
+        "🎨 ቀለም ቀቢ",
+        "🎨 <b>ቀለም ቀቢ</b>\n\n"
+        "ለቤት ወይም ቢሮ ቀለም ቅብ ስራ፣ ውሃ-ቀለም፣ ኦይል-ቀለም — "
+        "ጥራቱን የጠበቀ ስራ የሚሰሩ ባለሞያዎችን እናቀርባለን።"
+    ),
+    "workers_gypsum": (
+        "🏗 ጂብሰም ባለሞያ",
+        "🏗 <b>ጂብሰም ባለሞያ</b>\n\n"
+        "ለጂብሰም ጣሪያ፣ ክፍፍል ግድግዳ እና ማስዋቢያ ስራዎች "
+        "ሙሉ ልምድ ያላቸውን ባለሞያዎች እናቀርባለን።"
+    ),
+    "workers_carpenter": (
+        "🪚 አናጢ",
+        "🪚 <b>አናጢ</b>\n\n"
+        "ለበር፣ ለመስኮት፣ ለቁም ሳጥን እና ለሌሎች "
+        "የእንጨት ስራዎች ብቁ አናጢዎችን እናቀርባለን።"
+    ),
+
+    # ── 3. ፅዳት ──
+    "cleaning_home": (
+        "🏠 የቤት ፅዳት",
+        "🏠 <b>የቤት ፅዳት</b>\n\n"
+        "ዘመናዊ የፅዳት መሳሪያዎችን እና ምርቶችን በመጠቀም "
+        "የቤትዎን ሙሉ ፅዳት — ወለል፣ መስኮት፣ ኩሽና — "
+        "በጥራት እናከናውናለን።"
+    ),
+    "cleaning_office": (
+        "🏢 የቢሮ ፅዳት",
+        "🏢 <b>የቢሮ ፅዳት</b>\n\n"
+        "ዘመናዊ የፅዳት መሳሪያዎችን እና ምርቶችን በመጠቀም "
+        "የቢሮዎን ሙሉ ፅዳት — ወለል፣ ዴስክ፣ መጸዳጃ ቤት — "
+        "በጥራት እናከናውናለን።"
+    ),
+
+    # ── 4. ማዘዋወር ──
+    "moving_home": (
+        "🏠 የቤት እቃዎች ማዘዋወር",
+        "🏠 <b>የቤት እቃዎች ማዘዋወር</b>\n\n"
+        "የቤትዎን ሶፋ፣ አልጋ፣ ቁም ሳጥን እና ሌሎች እቃዎች "
+        "ያለምንም ጉዳት በጥንቃቄ ከአንድ ቦታ ወደ ሌላ ቦታ "
+        "እናጓጉዛለን።"
+    ),
+    "moving_office": (
+        "🏢 የቢሮ እቃዎች ማዘዋወር",
+        "🏢 <b>የቢሮ እቃዎች ማዘዋወር</b>\n\n"
+        "የቢሮዎን ኮምፒዩተር፣ ዴስክ፣ ካቢኔ እና ሌሎች እቃዎች "
+        "ያለምንም ጉዳት በጥንቃቄ ከአንድ ቦታ ወደ ሌላ ቦታ "
+        "እናጓጉዛለን።"
+    ),

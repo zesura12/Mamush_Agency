@@ -1,0 +1,119 @@
+# ─── ረዳት: ፍድባክ Admin ላክ ────────────────────────────────────────────────────
+async def _ፍድባክ_ወደ_admin(user, state: FSMContext, stars: str, comment):
+    await state.clear()
+    user_name = user.full_name
+    username  = f"@{user.username}" if user.username else "—"
+    msg = (
+        f"💬 <b>አዲስ አስተያየት!</b>\n\n"
+        f"⭐️ <b>ደረጃ:</b> {stars}\n"
+        f"👤 <b>ስም:</b> {user_name}\n"
+        f"🔗 <b>Username:</b> {username}\n"
+    )
+    if comment:
+        msg += f"💬 <b>ሃሳብ:</b>\n{comment}\n"
+    msg += f"{'─' * 20}"
+    await bot.send_message(ADMIN_ID, msg, parse_mode="HTML")
+
+
+# ─── ወደ ቤት ──────────────────────────────────────────────────────────────────
+@dp.callback_query(F.data == "back_home")
+async def ወደ_ቤት(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await state.clear()
+    ጽሁፍ = (
+        "👋 ሰላም እንኳን ወደ <b>ማሙሽ Multi-Service Agency</b> በደህና መጡ‼️\n\n"
+        "እባክዎ የሚፈልጉትን አገልግሎት ይምረጡ፦"
+    )
+    await callback.message.edit_text(ጽሁፍ, reply_markup=ዋና_ምናሌ(), parse_mode="HTML")
+
+
+# ─── Fallback: ያልተጠበቀ message ────────────────────────────────────────────────
+@dp.message()
+async def ያልታወቀ_message(message: types.Message, state: FSMContext):
+    current = await state.get_state()
+    if current:
+        return
+    await message.answer(
+        "👋 ትእዛዝ ለመስጠት /start ይጫኑ።",
+        reply_markup=ዋና_ምናሌ(),
+    )
+
+
+# ─── Health check ─────────────────────────────────────────────────────────────
+async def health(request):
+    return web.Response(text="✅ ቦቱ እየሰራ ነው።")
+
+
+# ─── Keep-alive: ቦቱ እንዳይተኛ ───────────────────────────────────────────────────
+async def keep_alive_loop():
+    await asyncio.sleep(30)
+    ping_url = f"{WEBHOOK_URL}/bot/health" if WEBHOOK_URL else None
+    if not ping_url:
+        return
+    import aiohttp as _aiohttp
+    logging.info("Keep-alive ጀምሯል → %s", ping_url)
+    while True:
+        try:
+            async with _aiohttp.ClientSession() as session:
+                async with session.get(ping_url, timeout=_aiohttp.ClientTimeout(total=10)) as resp:
+                    logging.info("Keep-alive ✅ status=%s", resp.status)
+        except Exception as e:
+            logging.warning("Keep-alive ping ሳይሳካ ቀረ: %s", e)
+        await asyncio.sleep(60)
+
+
+# ─── Startup / shutdown ───────────────────────────────────────────────────────
+async def on_startup():
+    try:
+        await bot.set_my_commands([
+            types.BotCommand(command="start",    description="ማሙሽ ኤጀንሲ ጀምር / አገልግሎቶቹን ይመልከቱ"),
+            types.BotCommand(command="feedback", description="አስተያየት ይስጡ ⭐️"),
+        ])
+        await bot.set_my_description(
+            "🏠 ማሙሽ Multi-Service Agency\n\n"
+            "✅ የመብራት እና ቧንቧ ጥገና\n"
+            "✅ ግንበኛ፣ ቀለም ቀቢ፣ ጂብሰም እና አናጢ\n"
+            "✅ የቤት እና ቢሮ ፅዳት\n"
+            "✅ እቃዎችን ማዘዋወር\n"
+            "✅ እቃዎችን በትእዛዝ ማምጣት\n\n"
+            "24/7 | ፈጣን ምላሽ | አስተማማኝ ባለሞያዎች\n\n"
+            "ለማዘዝ /start ይጫኑ 👇"
+        )
+        await bot.set_my_short_description(
+            "🏠 ማሙሽ ኤጀንሲ — ጥገና፣ ፅዳት፣ ማዘዋወር እና ሌሎች አገልግሎቶች | /start ይጫኑ"
+        )
+        logging.info("Bot profile ተቀናጅቷል ✅")
+    except Exception as e:
+        logging.warning("Bot profile setup ሳይሳካ ቀረ: %s", e)
+
+    if WEBHOOK_URL:
+        try:
+            await bot.set_webhook(
+                f"{WEBHOOK_URL}{WEBHOOK_PATH}",
+                drop_pending_updates=True,
+                allowed_updates=["message", "callback_query"],
+            )
+            logging.info("Webhook ተቀናጅቷል → %s%s", WEBHOOK_URL, WEBHOOK_PATH)
+        except Exception as e:
+            logging.error("Webhook setup አልተሳካም: %s", e)
+
+
+async def on_shutdown():
+    if WEBHOOK_URL:
+        await bot.delete_webhook()
+    await bot.session.close()
+
+
+dp.startup.register(on_startup)
+dp.shutdown.register(on_shutdown)
+
+
+async def on_startup_keepalive():
+    asyncio.create_task(keep_alive_loop())
+
+dp.startup.register(on_startup_keepalive)
+
+
+# ─── Main ─────────────────────────────────────────────────────────────────────
+if name == "main":
+    logging.info("✅ ማሙሽ ቦት እየጀመረ ነው... (port=%s)", PORT)

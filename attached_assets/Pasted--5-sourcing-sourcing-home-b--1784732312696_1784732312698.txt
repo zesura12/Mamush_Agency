@@ -1,0 +1,108 @@
+# ── 5. ምርቶች (sourcing) ──
+    "sourcing_home": (
+        "🛋 የቤት ውስጥ እቃዎች",
+        "🛋 <b>የቤት ውስጥ እቃዎች</b>\n\n"
+        "ሶፋ፣ አልጋ፣ ጠረጴዛ ወይም ሌሎች የቤት እቃዎች — "
+        "ምን እቃ እንዲያመጣሉ ይፈልጋሉ?"
+    ),
+    "sourcing_office": (
+        "💼 የቢሮ እቃዎች",
+        "💼 <b>የቢሮ እቃዎች</b>\n\n"
+        "ዴስክ፣ ወንበር፣ ፋይሊንግ ካቢኔ ወይም ሌሎች የቢሮ እቃዎች — "
+        "ምን እቃ እንዲያመጣሉ ይፈልጋሉ?"
+    ),
+    "sourcing_other": (
+        "📦 ሌሎች እቃዎች",
+        "📦 <b>ሌሎች እቃዎች</b>\n\n"
+        "ማናቸውንም ሌሎች እቃዎች — "
+        "ምን እቃ እንዲያመጣሉ ይፈልጋሉ?"
+    ),
+}
+
+# ዋና → ንዑስ ቁልፎች ካርታ
+MAIN_TO_SUB = {
+    "maintenance": ["maintenance_electric", "maintenance_plumbing"],
+    "workers":     ["workers_mason", "workers_painter", "workers_gypsum", "workers_carpenter"],
+    "cleaning":    ["cleaning_home", "cleaning_office"],
+    "moving":      ["moving_home", "moving_office"],
+    "sourcing":    ["sourcing_home", "sourcing_office", "sourcing_other"],
+}
+
+STAR_MAP = {"1": "⭐️", "2": "⭐️⭐️", "3": "⭐️⭐️⭐️", "4": "⭐️⭐️⭐️⭐️", "5": "⭐️⭐️⭐️⭐️⭐️"}
+
+
+# ── ረዳት: ዋና ምናሌ ──────────────────────────────────────────────────────────────
+def ዋና_ምናሌ() -> InlineKeyboardMarkup:
+    kb = [
+        [InlineKeyboardButton(text=label, callback_data=f"serv_{key}")]
+        for key, label in MAIN_SERVICES.items()
+    ]
+    return InlineKeyboardMarkup(inline_keyboard=kb)
+
+# ── ረዳት: ንዑስ ምናሌ ─────────────────────────────────────────────────────────────
+def ንዑስ_ምናሌ(main_key: str) -> InlineKeyboardMarkup:
+    rows = [
+        [InlineKeyboardButton(text=SUB_SERVICES[sub][0], callback_data=f"sub_{sub}")]
+        for sub in MAIN_TO_SUB[main_key]
+    ]
+    rows.append([InlineKeyboardButton(text="🔙 ወደ ኋላ ተመለስ", callback_data="back_home")])
+    return InlineKeyboardMarkup(inline_keyboard=rows)
+
+# ── ረዳት: የደረጃ ምናሌ ────────────────────────────────────────────────────────────
+def የደረጃ_ምናሌ() -> InlineKeyboardMarkup:
+    return InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text="1 ⭐️", callback_data="rate_1"),
+        InlineKeyboardButton(text="2 ⭐️", callback_data="rate_2"),
+        InlineKeyboardButton(text="3 ⭐️", callback_data="rate_3"),
+        InlineKeyboardButton(text="4 ⭐️", callback_data="rate_4"),
+        InlineKeyboardButton(text="5 ⭐️", callback_data="rate_5"),
+    ]])
+
+
+# ─── /start ────────────────────────────────────────────────────────────────────
+@dp.message(Command("start"))
+async def ሰላምታ_ላክ(message: types.Message, state: FSMContext):
+    await state.clear()
+    ጽሁፍ = (
+        "👋 ሰላም እንኳን ወደ <b>ማሙሽ Multi-Service Agency</b> በደህና መጡ‼️\n\n"
+        "ይህ ድርጅት በከተማችን የሚፈጠረውን የስራ መስተጓጎል፣ የሞያ እና "
+        "የባለሞያ ብቁ አለመሆንን እንዲሁም አለመታመንን በማስቀረት "
+        "በሙሉ ተጠያቂነት ወደ ስራ የገባ ድርጅት ነው‼️\n\n"
+        "እባክዎ ከታች ካሉት አማራጮች የሚፈልጉትን አገልግሎት ይምረጡ፦"
+    )
+    await message.answer(ጽሁፍ, reply_markup=ዋና_ምናሌ(), parse_mode="HTML")
+
+
+# ─── /feedback ─────────────────────────────────────────────────────────────────
+@dp.message(Command("feedback"))
+async def ፍድባክ_ጀምር_ትእዛዝ(message: types.Message, state: FSMContext):
+    await state.clear()
+    await state.set_state(FeedbackState.waiting_for_rating)
+    await message.answer(
+        "🌟 <b>አስተያየት ይስጡ</b>\n\n"
+        "ለአገልግሎታችን ምን ደረጃ ይሰጣሉ?",
+        reply_markup=የደረጃ_ምናሌ(),
+        parse_mode="HTML",
+    )
+
+
+# ─── ዋና አገልግሎት ሲነካ → ንዑስ ዝርዝር ──────────────────────────────────────────────
+@dp.callback_query(F.data.startswith("serv_"))
+async def ዋና_ምናሌ_ንካ(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
+    key   = callback.data[len("serv_"):]
+    label = MAIN_SERVICES.get(key, "አገልግሎት")
+    await callback.message.edit_text(
+        f"<b>{label}</b>\n\nእባክዎ ዝርዝር አገልግሎት ይምረጡ፦",
+        reply_markup=ንዑስ_ምናሌ(key),
+        parse_mode="HTML",
+    )
+
+
+# ─── ንዑስ አገልግሎት ሲነካ → ዝርዝር + ትእዛዝ ቁልፍ ────────────────────────────────────
+@dp.callback_query(F.data.startswith("sub_"))
+async def ንዑስ_ምናሌ_ንካ(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
+    sub_key = callback.data[len("sub_"):]
+    label, description = SUB_SERVICES.get(sub_key, ("—", "—"))
+    main_key = sub_key.rsplit("_", 1)[0]

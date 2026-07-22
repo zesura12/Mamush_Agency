@@ -1,0 +1,102 @@
+kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="✅ ትእዛዝ አስተላልፍ", callback_data=f"order_{sub_key}")],
+        [InlineKeyboardButton(text="🔙 ወደ ኋላ ተመለስ",  callback_data=f"serv_{main_key}")],
+    ])
+    await callback.message.edit_text(description, reply_markup=kb, parse_mode="HTML")
+
+
+# ─── ትእዛዝ: sourcing ከሆነ እቃ ጠይቅ፣ ሌሎች ስልክ ጠይቅ ────────────────────────────────
+@dp.callback_query(F.data.startswith("order_"))
+async def ትእዛዝ_ጀምር(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
+    sub_key = callback.data[len("order_"):]
+    await state.update_data(selected_service=sub_key)
+
+    # ── ሁሉም አገልግሎቶች: መጀመሪያ ፍላጎቱን ይፃፍ ──
+    await state.set_state(OrderState.waiting_for_item_description)
+    if sub_key.startswith("sourcing_"):
+        prompt = (
+            "📝 <b>ምን እቃ እንዲያመጣሉ ይፈልጋሉ?</b>\n\n"
+            "የሚፈልጉትን እቃ ዝርዝር (ስም፣ ቁጥር፣ ቀለም ወዘተ) ይፃፉ ⬇️"
+        )
+    else:
+        label = SUB_SERVICES.get(sub_key, ("አገልግሎት",))[0]
+        prompt = (
+            f"📝 <b>ስለ {label} ፍላጎትዎ ይፃፉ</b>\n\n"
+            "ዝርዝሩን (ቦታ፣ ስፋት፣ ልዩ ፍላጎት ወዘተ) ሲፅፉ ምላሽ ፈጣን ይሆናል ⬇️"
+        )
+    await callback.message.answer(prompt, parse_mode="HTML")
+
+
+# ─── sourcing: እቃ ዝርዝር ሲደርስ → ስልክ ጠይቅ ──────────────────────────────────────
+@dp.message(OrderState.waiting_for_item_description)
+async def የእቃ_ዝርዝር_ተቀበል(message: types.Message, state: FSMContext):
+    item_text = message.text or "—"
+    await state.update_data(item_description=item_text)
+    await state.set_state(OrderState.waiting_for_contact)
+
+    kb = ReplyKeyboardMarkup(
+        keyboard=[[KeyboardButton(text="📱 ስልክ ቁጥሬን ላክ", request_contact=True)]],
+        resize_keyboard=True,
+        one_time_keyboard=True,
+    )
+    await message.answer(
+        "✅ ምርጫዎ ተመዝግቧል!\n\n"
+        "አሁን ደግሞ <b>'ስልክ ቁጥሬን ላክ'</b> ይጫኑ — ቶሎ እንደውልዎታለን።",
+        reply_markup=kb,
+        parse_mode="HTML",
+    )
+
+
+# ─── ስልክ ሲደርስ → Admin ላክ ────────────────────────────────────────────────────
+@dp.message(OrderState.waiting_for_contact, F.contact)
+async def ስልክ_ቁጥር_ተቀበል(message: types.Message, state: FSMContext):
+    data    = await state.get_data()
+    sub_key = data.get("selected_service", "")
+    label   = SUB_SERVICES.get(sub_key, ("❓ ያልታወቀ አገልግሎት",))[0]
+    item_desc = data.get("item_description")  # sourcing ብቻ ይኖረዋል
+
+    user_id   = message.from_user.id
+    phone     = message.contact.phone_number
+    user_name = message.from_user.full_name
+    username  = f"@{message.from_user.username}" if message.from_user.username else "—"
+
+    await state.clear()
+
+    # ምስጋና
+    await message.answer(
+        "✅ እናመሰግናለን‼️ ትእዛዝዎ ለ<b>ማሙሽ ኤጀንሲ</b> ደርሷል።\nበቅርቡ እንደውላለን። 🙏",
+        reply_markup=types.ReplyKeyboardRemove(),
+        parse_mode="HTML",
+    )
+
+    # ሌላ ትእዛዝ? + አስተያየት ቁልፍ
+    kb_yn = InlineKeyboardMarkup(inline_keyboard=[
+        [
+            InlineKeyboardButton(text="✅ አዎ", callback_data="another_yes"),
+            InlineKeyboardButton(text="❌ አይ", callback_data="another_no"),
+        ],
+        [InlineKeyboardButton(text="🌟 አስተያየት ስጥ", callback_data="give_feedback")],
+    ])
+    await message.answer("🔄 ሌላ ትእዛዝ አለዎት?", reply_markup=kb_yn)
+
+    # Admin ማሳወቂያ — "ስራ ሲያልቅ ደንበኛ አሳውቅ" ቁልፍ አለው
+    admin_msg = (
+        f"🚨 <b>አዲስ ትእዛዝ!</b>\n\n"
+        f"🛎 <b>አገልግሎት:</b> {label}\n"
+    )
+    if item_desc:
+        admin_msg += f"📦 <b>ዝርዝር ፍላጎት:</b>\n{item_desc}\n"
+    admin_msg += (
+        f"👤 <b>ስም:</b> {user_name}\n"
+        f"🔗 <b>Username:</b> {username}\n"
+        f"📞 <b>ስልክ:</b> {phone}\n"
+        f"{'─' * 20}"
+    )
+    admin_kb = InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(
+            text="📬 ስራ ሲያልቅ ደንበኛ አሳውቅ",
+            callback_data=f"notify_{user_id}",
+        )
+    ]])
+    await bot.send_message(ADMIN_ID, admin_msg, parse_mode="HTML", reply_markup=admin_kb)

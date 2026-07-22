@@ -1,0 +1,101 @@
+# ─── state ውስጥ ሌላ message ──────────────────────────────────────────────────
+@dp.message(OrderState.waiting_for_contact)
+async def ስልክ_ቁጥር_ጠበቅ(message: types.Message):
+    await message.answer(
+        "📱 ስልክ ቁጥርዎን ለመላክ ከታች ያለውን <b>'ስልክ ቁጥሬን ላክ'</b> ቁልፍ ይጫኑ።",
+        parse_mode="HTML",
+    )
+
+
+# ─── ሌላ ትእዛዝ: አዎ ────────────────────────────────────────────────────────────
+@dp.callback_query(F.data == "another_yes")
+async def ሌላ_ትእዛዝ_አዎ(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await state.clear()
+    await callback.message.edit_text(
+        "እባክዎ ሌላ የሚፈልጉትን አገልግሎት ይምረጡ፦",
+        reply_markup=ዋና_ምናሌ(),
+    )
+
+
+# ─── ሌላ ትእዛዝ: አይ ────────────────────────────────────────────────────────────
+@dp.callback_query(F.data == "another_no")
+async def ሌላ_ትእዛዝ_አይ(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
+    kb = InlineKeyboardMarkup(inline_keyboard=[
+        [InlineKeyboardButton(text="🌟 አስተያየት ስጥ", callback_data="give_feedback")],
+        [InlineKeyboardButton(text="🛒 ለማዘዝ", callback_data="back_home")],
+    ])
+    await callback.message.edit_text(
+        "🙏 ለዛሬ ትእዛዝ እናመሰግናለን!\nቀጣይ ማዘዝ ሲፈልጉ እንደገና እንጠብቆታለን።",
+        reply_markup=kb,
+    )
+
+
+# ─── አስተያየት ቁልፍ ─────────────────────────────────────────────────────────────
+@dp.callback_query(F.data == "give_feedback")
+async def ፍድባክ_ጀምር(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
+    await state.clear()
+    await state.set_state(FeedbackState.waiting_for_rating)
+    await callback.message.answer(
+        "🌟 <b>አስተያየት ይስጡ</b>\n\n"
+        "ለአገልግሎታችን ምን ደረጃ ይሰጣሉ?",
+        reply_markup=የደረጃ_ምናሌ(),
+        parse_mode="HTML",
+    )
+
+
+# ─── ደረጃ ሲደርስ → ሃሳብ ጠይቅ ──────────────────────────────────────────────────
+@dp.callback_query(FeedbackState.waiting_for_rating, F.data.startswith("rate_"))
+async def ደረጃ_ተቀበል(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
+    rating = callback.data[len("rate_"):]
+    stars  = STAR_MAP.get(rating, rating)
+    await state.update_data(rating=rating, stars=stars)
+    await state.set_state(FeedbackState.waiting_for_comment)
+
+    kb_skip = InlineKeyboardMarkup(inline_keyboard=[[
+        InlineKeyboardButton(text="⏭️ ዝለሉ", callback_data="skip_comment"),
+    ]])
+    await callback.message.edit_text(
+        f"<b>{stars}</b> ደረጃ ሰጥተዋል!\n\n"
+        "💬 ሃሳብዎን ወይም ምክረ-ሃሳብዎን ይፃፉ "
+        "(ወይም <b>ዝለሉ</b> ይጫኑ):",
+        reply_markup=kb_skip,
+        parse_mode="HTML",
+    )
+
+
+# ─── ሃሳብ ሲደርስ → Admin ላክ ──────────────────────────────────────────────────
+@dp.message(FeedbackState.waiting_for_comment)
+async def ሃሳብ_ተቀበልና_ላክ(message: types.Message, state: FSMContext):
+    data    = await state.get_data()
+    stars   = data.get("stars", "—")
+    comment = message.text or "—"
+    await _ፍድባክ_ወደ_admin(message.from_user, state, stars, comment)
+    await message.answer(
+        "✅ <b>አስተያየትዎ ተላከ!</b> ስለ ትብብርዎ እናመሰግናለን 🙏\n\n"
+        "ሌሎች አገልግሎቶች ለማዘዝ ቁልፉን ይጫኑ 👇",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(text="🛒 ወደ ምናሌ ተመለስ", callback_data="back_home")
+        ]]),
+        parse_mode="HTML",
+    )
+
+
+# ─── ዝለሉ (ሃሳብ ሳይፃፉ) ──────────────────────────────────────────────────────────
+@dp.callback_query(FeedbackState.waiting_for_comment, F.data == "skip_comment")
+async def ሃሳብ_ዝለሉ(callback: types.CallbackQuery, state: FSMContext):
+    await callback.answer()
+    data  = await state.get_data()
+    stars = data.get("stars", "—")
+    await _ፍድባክ_ወደ_admin(callback.from_user, state, stars, comment=None)
+    await callback.message.edit_text(
+        "✅ <b>አስተያየትዎ ተላከ!</b> ስለ ትብብርዎ እናመሰግናለን 🙏\n\n"
+        "ሌሎች አገልግሎቶች ለማዘዝ ቁልፉን ይጫኑ 👇",
+        reply_markup=InlineKeyboardMarkup(inline_keyboard=[[
+            InlineKeyboardButton(text="🛒 ወደ ምናሌ ተመለስ", callback_data="back_home")
+        ]]),
+        parse_mode="HTML",
+    )
