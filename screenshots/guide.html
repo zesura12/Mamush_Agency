@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="am">
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: 'Segoe UI', Arial, sans-serif; background: #f0f0f0; margin: 0; padding: 20px; }
+  .step { background: white; border-radius: 12px; padding: 20px; margin-bottom: 20px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
+  .step-num { background: #f26207; color: white; border-radius: 50%; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; font-weight: bold; font-size: 18px; margin-right: 10px; }
+  .step-title { font-size: 18px; font-weight: bold; color: #222; display: flex; align-items: center; margin-bottom: 14px; }
+  .replit-mock { background: #1e1e2e; border-radius: 10px; padding: 0; overflow: hidden; font-family: monospace; }
+  .replit-topbar { background: #2a2a3e; padding: 10px 16px; display: flex; align-items: center; gap: 10px; }
+  .dot { width: 12px; height: 12px; border-radius: 50%; }
+  .sidebar { background: #252535; width: 220px; float: left; min-height: 200px; padding: 10px 0; }
+  .sidebar-item { padding: 8px 16px; color: #ccc; font-size: 13px; display: flex; align-items: center; gap: 8px; cursor: pointer; }
+  .sidebar-item.active { background: #3a3a55; color: white; }
+  .sidebar-item.highlighted { background: #f26207; color: white; border-radius: 4px; margin: 4px 8px; padding: 8px; }
+  .folder { color: #e5c07b; }
+  .pyfile { color: #61afef; }
+  .arrow { font-size: 28px; color: #f26207; text-align: center; margin: 6px 0; }
+  .highlight-box { border: 3px solid #f26207; border-radius: 8px; padding: 10px 16px; background: #fff8f5; margin-top: 10px; }
+  .highlight-box .label { color: #f26207; font-weight: bold; font-size: 15px; margin-bottom: 4px; }
+  .context-menu { background: #fff; border: 1px solid #ddd; border-radius: 6px; width: 180px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); margin: 10px auto; }
+  .context-item { padding: 10px 16px; font-size: 14px; color: #333; border-bottom: 1px solid #f0f0f0; display: flex; align-items: center; gap: 8px; }
+  .context-item.highlighted { background: #fff0e6; color: #f26207; font-weight: bold; }
+  .kbd { background: #eee; border: 1px solid #ccc; border-radius: 4px; padding: 2px 8px; font-family: monospace; font-size: 13px; }
+  .note { background: #e8f5e9; border-left: 4px solid #4caf50; padding: 12px 16px; border-radius: 4px; margin-top: 10px; font-size: 14px; color: #2e7d32; }
+  h2 { text-align: center; color: #333; margin-bottom: 24px; }
+  .or-divider { text-align: center; font-weight: bold; color: #888; margin: 8px 0; font-size: 16px; }
+  .shortcut-box { background: #f5f5f5; border-radius: 8px; padding: 14px; text-align: center; font-size: 15px; }
+</style>
+</head>
+<body>
+<h2>📁 Bot ኮድ እንዴት ልትልኩ — ደረጃ በደረጃ</h2>
+
+<!-- Step 1 -->
+<div class="step">
+  <div class="step-title"><span class="step-num">1</span> Bot ያለበት Replit project ሂድ → Files tab ጠቅ አድርግ</div>
+  <div class="replit-mock">
+    <div class="replit-topbar">
+      <div class="dot" style="background:#ff5f57"></div>
+      <div class="dot" style="background:#ffbd2e"></div>
+      <div class="dot" style="background:#28ca41"></div>
+      <span style="color:#aaa; font-size:13px; margin-left:8px">your-bot-project — Replit</span>
+    </div>
+    <div style="display:flex">
+      <div class="sidebar">
+        <div class="sidebar-item highlighted">📁 Files ← <b>ይህን ጠቅ አድርግ</b></div>
+        <div class="sidebar-item">🔍 Search</div>
+        <div class="sidebar-item">⚙️ Settings</div>
+      </div>
+      <div style="flex:1; padding:16px; color:#888; font-size:13px">Editor...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Step 2 -->
+<div class="step">
+  <div class="step-title"><span class="step-num">2</span> <code style="background:#f0f0f0;padding:2px 8px;border-radius:4px">bot</code> folder ጠቅ አድርግ → <code style="background:#f0f0f0;padding:2px 8px;border-radius:4px">main.py</code> ፈልግ</div>
+  <div class="replit-mock">
+    <div style="background:#252535; padding:12px 16px;">
+      <div style="color:#ccc; font-size:13px; margin-bottom:6px">📁 Files</div>
+      <div style="color:#e5c07b; font-size:13px; padding:4px 0">📂 bot</div>
+      <div style="color:#61afef; font-size:13px; padding:4px 0 4px 20px; background:#3a4a60; border-radius:4px">
+        📄 <b>main.py</b> ← <span style="color:#f26207">ይህ ፋይል!</span>
+      </div>
+      <div style="color:#888; font-size:12px; padding:4px 0 4px 20px">📄 requirements.txt</div>
+      <div style="color:#888; font-size:12px; padding:4px 0">📄 .env</div>
+    </div>
+  </div>
+</div>
+
+<!-- Step 3 - Download -->
+<div class="step">
+  <div class="step-title"><span class="step-num">3</span> <b>አማራጭ A:</b> main.py ላይ 3 ነጥብ (...) ጠቅ አድርግ → Download</div>
+  <div class="context-menu">
+    <div class="context-item">✏️ Rename</div>
+    <div class="context-item">📋 Copy path</div>
+    <div class="context-item highlighted">⬇️ Download ← <b>ይህን ጠቅ አድርግ</b></div>
+    <div class="context-item">🗑️ Delete</div>
+  </div>
+  <div class="note">✅ ፋይሉን ካወረድህ → እዚህ chat ላይ Upload አድርግ (📎 ምልክቱን ጠቅ አድርግ)</div>
+
+  <div class="or-divider">— ወይም —</div>
+
+  <div class="step-title" style="margin-bottom:10px"><span class="step-num" style="background:#555">B</span> <b>አማራጭ B:</b> ፋይሉን ክፈት → ሁሉን ቅዳ → እዚህ ለጥፍ</div>
+  <div class="shortcut-box">
+    <span class="kbd">Ctrl + A</span> (ሁሉን ምረጥ) &nbsp;→&nbsp; <span class="kbd">Ctrl + C</span> (ቅዳ) &nbsp;→&nbsp; እዚህ <span class="kbd">Ctrl + V</span> (ለጥፍ)
+  </div>
+</div>
+
+</body>
+</html>
