@@ -1,6 +1,7 @@
 import logging
 import asyncio
 import os
+import datetime
 from aiohttp import web
 from aiogram import Bot, Dispatcher, types, F
 from aiogram.filters import Command
@@ -157,6 +158,17 @@ MAIN_TO_SUB = {
 }
 
 STAR_MAP = {"1": "⭐️", "2": "⭐️⭐️", "3": "⭐️⭐️⭐️", "4": "⭐️⭐️⭐️⭐️", "5": "⭐️⭐️⭐️⭐️⭐️"}
+
+# ─── የቀን ትእዛዝ ቆጣሪ ────────────────────────────────────────────────────────────
+_order_counter: dict = {"date": None, "count": 0}
+
+def ቀጣይ_ትእዛዝ_ቁጥር() -> int:
+    today = datetime.date.today().isoformat()
+    if _order_counter["date"] != today:
+        _order_counter["date"] = today
+        _order_counter["count"] = 0
+    _order_counter["count"] += 1
+    return _order_counter["count"]
 
 
 # ── ረዳት: ዋና ምናሌ ──────────────────────────────────────────────────────────────
@@ -340,8 +352,10 @@ async def ስልክ_ቁጥር_ተቀበል(message: types.Message, state: FSMCon
     await message.answer("🔄 ሌላ ትእዛዝ አለዎት?", reply_markup=kb_yn)
 
     # Admin ማሳወቂያ
+    order_num  = ቀጣይ_ትእዛዝ_ቁጥር()
+    today_str  = datetime.date.today().strftime("%d/%m/%Y")
     admin_msg = (
-        f"🚨 <b>አዲስ ትእዛዝ!</b>\n\n"
+        f"🚨 <b>አዲስ ትእዛዝ #{order_num}</b>  <i>({today_str})</i>\n\n"
         f"🛎 <b>አገልግሎት:</b> {label}\n"
     )
     if item_desc:
