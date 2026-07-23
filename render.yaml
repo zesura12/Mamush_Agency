@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: mamush-bot
+    runtime: python
+    rootDir: bot
+    buildCommand: pip install -r requirements.txt
+    startCommand: python main.py
+    envVars:
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: ADMIN_ID
+        sync: false
+    healthCheckPath: /bot/health
