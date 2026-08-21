@@ -21,7 +21,7 @@ logging.basicConfig(level=logging.INFO)
 # --- ውቅር ---
 API_TOKEN    = os.environ.get("TELEGRAM_BOT_TOKEN")
 ADMIN_ID     = int(os.environ.get("ADMIN_ID", "0"))
-WEBHOOK_URL  = os.environ.get("WEBHOOK_URL", "")
+WEBHOOK_URL  = (os.environ.get("WEBHOOK_URL") or os.environ.get("RENDER_EXTERNAL_URL") or "").rstrip("/")
 WEBHOOK_PATH = "/bot/webhook"
 PORT         = int(os.environ.get("PORT", 8000))
 
